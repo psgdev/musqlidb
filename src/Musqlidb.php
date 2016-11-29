@@ -22,6 +22,7 @@ class Musqlidb extends mysqli
     protected $setUtf8Uni = false;
     protected $setUtf8mb4Uni = false;
     protected $runSQL = '';
+    protected $action = 'select';
 
     protected $dbHost = '';
     protected $dbPort = '';
@@ -29,13 +30,10 @@ class Musqlidb extends mysqli
     protected $dbUser = '';
     protected $dbPassword = '';
 
-    protected $trackDeleted = false; // need to extend this class to enable log of delete attempt or use non static
-    // instantiation only
-
-
     /**
      * public var
      */
+    public $trackDeleted = false; // track destructive actions
     public $testStatus = false; // if true, queries will not be executed except select statement!!!!
     public $cntConnection = 0;
     public $response = null;
@@ -251,15 +249,14 @@ class Musqlidb extends mysqli
     }
 
     /**
-     * Query
+     * run
      *
      * @throws Exception exception
      * @param string $query
-     * @param string $action
      * @param bool $reconnected
      * @return object|bool
      */
-    public function run($query, $action = 'select', $reconnected = false) {
+    public function run($query, $reconnected = false) {
 
         // RESET THIS DATA!!!
         $this->rows = 0;
@@ -271,31 +268,32 @@ class Musqlidb extends mysqli
         }
 
         $this->runSQL = $query;
-        $this->currentQuery = " | db: ".$this->dbName."; query: " . $query . " |";
+        $this->currentQuery = " | db: ".$this->dbName."; query: " . $this->runSQL . " |";
 
-        $subQuery = strtolower(substr(trim($query), 0, 6));
-        $action = strtolower($action);
+        $subQuery = strtolower(substr(trim($this->runSQL), 0, 8));
 
-        if (strstr($subQuery, 'insert') || $action == 'insert') {
-            $action = 'insert';
+        if (strstr($subQuery, 'insert')) {
+            $this->action = 'insert';
             if ($this->testStatus == true)
                 return true;
-        }
 
-        if (strstr($subQuery, 'update') || $action == 'update') {
-            $action = 'update';
+        } elseif (strstr($subQuery, 'update')) {
+            $this->action = 'update';
             if ($this->testStatus == true)
                 return true;
-        }
 
-        if (strstr($subQuery, 'delete') || $action == 'delete') {
-            $action = 'delete';
+        } elseif (strstr($subQuery, 'delete')) {
+            $this->action = 'delete';
             if ($this->testStatus == true)
                 return true;
-        }
 
-        if (strstr($subQuery, 'select') || $action == 'select') {
-            $action = 'select';
+        } elseif (strstr($subQuery, 'select')) {
+            $this->action = 'select';
+
+        } else {
+            $this->action = trim($subQuery);
+            if ($this->testStatus == true)
+                return true;
         }
 
         if ($this->setUtf8mb4Uni == true) {
@@ -316,7 +314,7 @@ class Musqlidb extends mysqli
             }
         }
 
-        $this->real_query($query);
+        $this->real_query($this->runSQL);
 
         if ($this->errno > 0) {
             $this->errorLog();
@@ -335,15 +333,14 @@ class Musqlidb extends mysqli
 
         // ** RECONNECT AND RUN THE QUERY - THESE ERRORS OCCURS WHEN THE APPLICATION AND DATABASE ARE ON DIFFERENT SERVERS - TIMEOUT ISSUE !!!
         if ($this->errno == '2006' || $this->errno == '2013') {
-            $this->errorLog($query);
+            $this->errorLog($this->runSQL);
             $this->close();
             if (self::__construct()) {
-                $this->run($query, $action, true);
+                $this->run($this->runSQL, true);
             }
         }
 
-//print "A".$action."A<br>";
-        if ($action == 'insert') {
+        if ($this->action == 'insert') {
 
             $this->setPrimaryKey($this->insert_id);
         }
@@ -351,8 +348,8 @@ class Musqlidb extends mysqli
         if ($this->errno == 0)
             $this->storeResult();
 
-        if ($this->trackDeleted == true) {
-            $this->trackDeleteAction($query, $this->errno, $this->error);
+        if ( $this->trackDeleted == true && ($this->action == 'delete' || $this->action == 'drop' || $this->action == 'truncate') ) {
+            $this->trackDeleteAction();
         }
 
         return $this->response;
@@ -911,13 +908,9 @@ class Musqlidb extends mysqli
 
     /**
      * trackDeleteAction
-     *
-     * @param string $query
-     * @param int $sqlResult
-     * @param string $sqlResultText
      */
-    protected function trackDeleteAction($query, $sqlResult, $sqlResultText) {
-        Log::info($query,'; '.$sqlResult.'; '.$sqlResultText);
+    protected function trackDeleteAction() {
+        Log::info($this->runSQL.'; '.$this->errno.'; '.$this->error);
     }
 
     /**
@@ -930,7 +923,7 @@ class Musqlidb extends mysqli
 
         $db = self::getInstanceByConfig($databaseConfig);
         $db->testStatus = $testStatus;
-        $db->Run($query);
+        $db->run($query);
 
         return $db;
     }
