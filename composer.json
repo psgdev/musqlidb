@@ -1,0 +1,21 @@
+{
+    "name": "psgdev/musqlidb",
+    "description": "mysqli db manager with multiple db connections",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "tibor",
+            "email": "tibor@planetsg.com"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {
+        "php": ">=5.4"
+    },
+    "autoload": {
+        "psr-4": {
+            "Musqlidb\\": "src/"
+        }
+    }
+}
