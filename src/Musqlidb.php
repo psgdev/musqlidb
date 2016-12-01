@@ -21,14 +21,14 @@ class Musqlidb extends mysqli
     protected $getEnc;
     protected $setUtf8Uni = false;
     protected $setUtf8mb4Uni = false;
-    protected $runSQL = '';
-    protected $action = 'select';
+    protected $runSQL;
+    protected $action;
 
-    protected $dbHost = '';
-    protected $dbPort = '';
-    protected $dbName = '';
-    protected $dbUser = '';
-    protected $dbPassword = '';
+    protected $dbHost;
+    protected $dbPort;
+    protected $dbName;
+    protected $dbUser;
+    protected $dbPassword;
 
     /**
      * public var
@@ -39,14 +39,14 @@ class Musqlidb extends mysqli
     public $response = null;
     public $rows = 0;
     public $data = [];
-    public $currentQuery = ''; // last run query, error and affected rows
+    public $currentQuery; // last run query, error and affected rows
 
     /**
      * protected static var
      */
     protected static $instance = null;
-    protected static $currentDatabaseConnection = ''; // current database connection from general database config, if new database requested, must switch in static instance call
-    protected static $currentDatabaseName = ''; // current database name, if new database requested, must switch in static instance call
+    protected static $currentDatabaseConnection = '_currentDbConnection'; // current database connection from general database config, if new database requested, must switch in static instance call
+    protected static $currentDatabaseName = '_currentDbName'; // current database name, if new database requested, must switch in static instance call
 
     /**
      * Musqlidb constructor
@@ -55,9 +55,10 @@ class Musqlidb extends mysqli
      * @param array $connectionArray
      * return object
      */
-    public function __construct($connectionArray = []) {
+    public function __construct($connectionArray = [])
+    {
 
-        if(is_array($connectionArray)) {
+        if (is_array($connectionArray)) {
 
             $this->dbHost = $connectionArray['host'];
             $this->dbPort = is_numeric($connectionArray['port']) ? $connectionArray['port'] : 3306;
@@ -79,26 +80,16 @@ class Musqlidb extends mysqli
             }
 
 
-        if ($this->cntConnection > 4) {
-            $err = "Unable to connect to " . $this->dbName . " on " . $this->dbHost . " : '" . $_SERVER['SERVER_NAME'] . "', msg: " . $this->connect_error;
-            $this->errorLog($err);
-            throw new Exception($err);
-            die();
-        }
+            if ($this->cntConnection > 4) {
+                $err = "Unable to connect to " . $this->dbName . " on " . $this->dbHost . " : '" . $_SERVER['SERVER_NAME'] . "', msg: " . $this->connect_error;
+                //$this->errorLog($err);
+                throw new Exception($err);
+                die();
+            }
 
-//        MOVED to setUTF8Uni and setUTF8mb4Uni respectively
-//        if(!empty($connectionArray['charset'])) {
-//            try {
-//                $this->set_charset($connectionArray['charset']);
-//                if($connectionArray['collation']) {
-//                    $this->query("SET collation_connection = ".$connectionArray['collation']."");
-//                }
-//            } catch(Exception $E) {
-//                $this->errorLog($E->getMessage());
-//            }
-//        }
 
         } else {
+            //$this->errorLog('Missing connection array in constructor.');
             throw new Exception('Missing connection array in constructor.');
             die();
         }
@@ -107,48 +98,73 @@ class Musqlidb extends mysqli
     }
 
     /**
-     * resolveBindingPair
+     * selectDB - if needed after connection has been created
      *
-     * @param int $key
-     * @param string $val
-     * @return string
+     * @throws Exception \mysqli_sql_exception
+     * @param $database
      */
-    protected function resolveBindingPair($key, $val) {
-
-        if (strlen($val) == 0) {
-            $bind = "`$key` = NULL";
-        } else {
-
-            if (strstr($val, '[dbFunction]')) {
-                $val = str_replace('[dbFunction]', '', $val);
-                $bind = "`$key` = $val";
-            } else {
-                $val = $this->escape($val);
-                $bind = "`$key` = '$val'";
+    public function selectDB($database)
+    {
+        try {
+            $this->select_db($database);
+        } catch (Exception $E) {
+            $this->close();
+            $this->errorLog("Set database issue: " . $E->getMessage());
+            throw $E;
+        } finally {
+            if($this->isError()) {
+                $this->close();
+                die();
             }
         }
 
-        return $bind;
     }
+
 
     /**
      * setUTF8Uni
+     *
+     * @throws Exception \mysqli_sql_exception
      */
-    public function setUTF8Uni() {
+    public function setConnectionUTF8Uni()
+    {
         $this->setUtf8Uni = true;
         $this->setUtf8mb4Uni = false;
-        $this->set_charset('utf8');
-        $this->run("SET collation_connection = utf8_unicode_ci");
+        try {
+            $this->set_charset('utf8');
+            $this->run("SET collation_connection = 'utf8_unicode_ci'");
+            $this->run("SET NAMES 'utf8' COLLATE 'utf8_unicode_ci'");
+        } catch (Exception $E) {
+            $this->errorLog("Set connection encoding issue: " . $E->getMessage());
+            throw $E;
+        } finally {
+            if($this->isError()) {
+                die();
+            }
+        }
     }
 
     /**
      * setUTF8mb4Uni
+     *
+     * @throws Exception \mysqli_sql_exception
      */
-    public function setUTF8mb4Uni() {
+    public function setConnectionUTF8mb4Uni()
+    {
         $this->setUtf8mb4Uni = true;
         $this->setUtf8Uni = false;
-        $this->set_charset('utf8mb4');
-        $this->run("SET collation_connection = utf8mb4_unicode_ci");
+        try {
+            $this->set_charset('utf8mb4');
+            $this->run("SET collation_connection = 'utf8mb4_unicode_ci'");
+            $this->run("SET NAMES 'utf8mb4' COLLATE 'utf8mb4_unicode_ci'");
+        } catch (Exception $E) {
+            $this->errorLog("Set connection encoding issue: " . $E->getMessage());
+            throw $E;
+        } finally {
+            if($this->isError()) {
+                die();
+            }
+        }
     }
 
     /**
@@ -156,7 +172,8 @@ class Musqlidb extends mysqli
      *
      * @param bool $use
      */
-    public function useTrackDeleted($use = true) {
+    public function useTrackDeleted($use = true)
+    {
         if (is_bool($use))
             $this->trackDeleted = $use;
     }
@@ -166,7 +183,8 @@ class Musqlidb extends mysqli
      *
      * @param int $key
      */
-    public function setPrimaryKey($key) {
+    public function setPrimaryKey($key)
+    {
         if ($this->isValidKey($key)) {
             $this->primaryKey = $key;
         } else {
@@ -179,7 +197,8 @@ class Musqlidb extends mysqli
      *
      * @return int
      */
-    public function getPrimaryKey() {
+    public function getPrimaryKey()
+    {
         return $this->primaryKey;
     }
 
@@ -189,7 +208,8 @@ class Musqlidb extends mysqli
      * @param int $key
      * @return int
      */
-    public function isValidKey($key) {
+    public function isValidKey($key)
+    {
         if (!empty($key) && is_numeric($key) && $key != 0) {
             return true;
         } else {
@@ -204,21 +224,22 @@ class Musqlidb extends mysqli
      * @param string $databaseConfig
      * @return object
      */
-    public static function getInstanceByConfig($databaseConfig) {
+    public static function getInstanceByConfig($databaseConfig)
+    {
 
-        if( empty($databaseConfig) ) {
+        if (empty($databaseConfig)) {
             throw new Exception('Missing database config.');
             die();
         }
 
 
-        if ( self::$currentDatabaseConnection != $databaseConfig || !self::$instance || (self::$instance && self::$instance->setUtf8mb4 == true) ) {
+        if (self::$currentDatabaseConnection != $databaseConfig || !self::$instance || (self::$instance && self::$instance->setUtf8mb4 == true)) {
 
             self::$currentDatabaseConnection = $databaseConfig;
 
-            $connectionArray = config("database.connections.".$databaseConfig."");
+            $connectionArray = config("database.connections." . $databaseConfig . "");
 
-            if(!is_array($connectionArray)) {
+            if (!is_array($connectionArray)) {
                 throw new Exception('Missing database connection properties.');
                 die();
             }
@@ -235,11 +256,12 @@ class Musqlidb extends mysqli
      * @param array $connectionArray
      * @return object
      */
-    public static function getInstance($connectionArray = []) {
+    public static function getInstance($connectionArray = [])
+    {
 
-        if(!is_array($connectionArray) || count($connectionArray) < 4) die('Missing database connection properties.');
+        if (!is_array($connectionArray) || count($connectionArray) == 0) die('Missing database connection properties.');
 
-        if (self::$currentDatabaseName != $connectionArray['database']  || !self::$instance  || (self::$instance && self::$instance->setUtf8mb4 == true) ) {
+        if (self::$currentDatabaseName != $connectionArray['database'] || !self::$instance || (self::$instance && self::$instance->setUtf8mb4 == true)) {
 
             self::$currentDatabaseName = $connectionArray['database'];
             self::$instance = new self($connectionArray);
@@ -256,7 +278,8 @@ class Musqlidb extends mysqli
      * @param bool $reconnected
      * @return object|bool
      */
-    public function run($query, $reconnected = false) {
+    public function run($query, $reconnected = false)
+    {
 
         // RESET THIS DATA!!!
         $this->rows = 0;
@@ -264,13 +287,13 @@ class Musqlidb extends mysqli
         $this->response = null;
 
         if ($reconnected == true) {
-            $this->errorLog("Reconnected: Try [$query] query to run again");
+            $this->errorLog("Reconnected: Try [$query] query to run again in database " . $this->dbName);
         }
 
         $this->runSQL = $query;
-        $this->currentQuery = " | db: ".$this->dbName."; query: " . $this->runSQL . " |";
+        $this->currentQuery = " | db: " . $this->dbName . "; query: " . $this->runSQL . " |";
 
-        $subQuery = strtolower(substr(trim($this->runSQL), 0, 8));
+        $subQuery = trim(strtolower(substr(trim($this->runSQL), 0, 8)));
 
         if (strstr($subQuery, 'insert')) {
             $this->action = 'insert';
@@ -291,49 +314,33 @@ class Musqlidb extends mysqli
             $this->action = 'select';
 
         } else {
-            $this->action = trim($subQuery);
+            $exp = explode(' ', $subQuery);
+            $this->action = $exp[0];
             if ($this->testStatus == true)
                 return true;
         }
 
-        if ($this->setUtf8mb4Uni == true) {
-            try {
-                $this->set_charset("utf8mb4");
-                $this->real_query("SET NAMES 'utf8mb4' COLLATE 'utf8mb4_unicode_ci'");
-            } catch(Exception $E) {
-                $this->errorLog($E->getMessage());
-            }
-        }
-
-        if ($this->setUtf8Uni == true) {
-            try {
-                $this->set_charset("utf8");
-                $this->real_query("SET NAMES 'utf8' COLLATE 'utf8_unicode_ci'");
-            } catch(Exception $E) {
-                $this->errorLog($E->getMessage());
-            }
-        }
 
         $this->real_query($this->runSQL);
 
         if ($this->errno > 0) {
-            $this->errorLog();
-            throw new Exception("Database error: ".$this->errno." | ".$this->error);
+            //$this->errorLog();
+            throw new Exception("Database SQL error: " . $this->getError());
         }
 
         try {
             $enc = $this->get_charset();
             $this->getEnc = $enc->charset . "::" . $enc->collation;
-        } catch(Exception $E) {
+        } catch (Exception $E) {
             //Log::warning($E->getMessage()); // get_charset() added in mysql v5.1 but set_charset added earlier in v5.0.5 - minimum requirement is mysql 5.0.5
         }
 
 
-        $this->currentQuery .= "error: ".$this->errno."::".$this->error."; affRows: ".$this->affected_rows." |";
+        $this->currentQuery .= "error: " . $this->errno . "::" . $this->error . "; affRows: " . $this->affected_rows . " | ";
 
         // ** RECONNECT AND RUN THE QUERY - THESE ERRORS OCCURS WHEN THE APPLICATION AND DATABASE ARE ON DIFFERENT SERVERS - TIMEOUT ISSUE !!!
         if ($this->errno == '2006' || $this->errno == '2013') {
-            $this->errorLog($this->runSQL);
+            $this->errorLog($this->dbName . ' :: ' . $this->runSQL);
             $this->close();
             if (self::__construct()) {
                 $this->run($this->runSQL, true);
@@ -348,7 +355,7 @@ class Musqlidb extends mysqli
         if ($this->errno == 0)
             $this->storeResult();
 
-        if ( $this->trackDeleted == true && ($this->action == 'delete' || $this->action == 'drop' || $this->action == 'truncate') ) {
+        if ($this->trackDeleted == true && ($this->action == 'delete' || $this->action == 'drop' || $this->action == 'truncate')) {
             $this->trackDeleteAction();
         }
 
@@ -358,7 +365,8 @@ class Musqlidb extends mysqli
     /**
      * storeResult
      */
-    public function storeResult() {
+    public function storeResult()
+    {
         $this->response = $this->store_result();
         if (!is_bool($this->response)) {
             $this->rows = $this->response->num_rows;
@@ -378,7 +386,8 @@ class Musqlidb extends mysqli
      * @param string $str
      * @return string
      */
-    public function escape($str) {
+    public function escape($str)
+    {
         return $this->real_escape_string($str);
     }
 
@@ -389,7 +398,8 @@ class Musqlidb extends mysqli
      * @param bool $returnObject
      * @return array|object
      */
-    public function result($onlyAssociative = false, $returnObject = false) {
+    public function result($onlyAssociative = false, $returnObject = false)
+    {
 
         if (!$this->isError() && !is_null($this->response) && !is_bool($this->response)) {
 
@@ -407,7 +417,7 @@ class Musqlidb extends mysqli
             return $this->data;
 
         } else {
-            if($returnObject == true) {
+            if ($returnObject == true) {
                 return new stdClass();
             } else {
                 return [];
@@ -422,7 +432,8 @@ class Musqlidb extends mysqli
      * @param bool $returnArrayOfObject
      * @return array|object
      */
-    public function fill($onlyAssociative = false, $returnArrayOfObject = false) {
+    public function fill($onlyAssociative = false, $returnArrayOfObject = false)
+    {
         //print "BF:".memory_get_usage()."<br>";
         $ret = [];
 
@@ -449,7 +460,8 @@ class Musqlidb extends mysqli
      * @param bool $silent
      * @return int
      */
-    public function getLastInsertID($silent = false) {
+    public function getLastInsertID($silent = false)
+    {
 
         if ($silent != false) {
 
@@ -462,7 +474,8 @@ class Musqlidb extends mysqli
 
             try {
                 if ($this->isError()) {
-                    throw new Exception("Missing z_Primary_Key." . $this->getError(true));
+                    //$this->errorLog();
+                    throw new Exception("Missing z_Primary_Key." . $this->getError());
                 } else {
                     return $this->getPrimaryKey();
                 }
@@ -477,7 +490,8 @@ class Musqlidb extends mysqli
      *
      * @return bool
      */
-    public function isError() {
+    public function isError()
+    {
         return ($this->errno == 0) ? false : true;
     }
 
@@ -487,12 +501,13 @@ class Musqlidb extends mysqli
      * @param bool $format
      * @return string
      */
-    public function getError($format = false) {
+    public function getError($format = false)
+    {
         if ($format == true) {
-            $ret = "Error ID:" . $this->errno . "\n Error message:" . $this->error . "\n SQL: " . $this->runSQL . "\n Encoding: " . $this->getEnc;
+            $ret = "Database: " . $this->dbName . "\n Error ID: " . $this->errno . "\n Error message:" . $this->error . "\n SQL: " . $this->runSQL . "\n Encoding: " . $this->getEnc;
             return $ret;
         }
-        return "Error ID: ".$this->errno . " :: " . $this->error . " :: " . $this->runSQL . " :: " . $this->getEnc;
+        return "Database: " . $this->dbName . "Error ID: " . $this->errno . " :: " . $this->error . " :: " . $this->runSQL . " :: " . $this->getEnc;
     }
 
     /**
@@ -500,7 +515,8 @@ class Musqlidb extends mysqli
      *
      * @return array
      */
-    public function getErrorArray() {
+    public function getErrorArray()
+    {
         return array($this->errno, $this->error, $this->runSQL);
     }
 
@@ -509,7 +525,8 @@ class Musqlidb extends mysqli
      * @param array $data
      * @return array
      */
-    public function getKeyArray($field = 'z_PRIMARY_KEY', $data = []) {
+    public function getKeyArray($field = 'z_PRIMARY_KEY', $data = [])
+    {
         $ret = [];
 
         if (!is_array($data) || $data == '') {
@@ -537,13 +554,14 @@ class Musqlidb extends mysqli
      *
      * @param string txt
      */
-    public function errorLog($txt = '') {
+    public function errorLog($txt = '')
+    {
 
-            if ($txt != '') {
-                Log::error($txt);
-            } else {
-                Log::error($this->errno . "::" . $this->error . "::" . $this->runSQL);
-            }
+        if ($txt != '') {
+            Log::error($txt);
+        } else {
+            Log::error($this->dbName . " :: " . $this->errno . " :: " . $this->error . " :: " . $this->runSQL);
+        }
 
     }
 
@@ -554,7 +572,8 @@ class Musqlidb extends mysqli
      * @param int $zPK
      * @return int
      */
-    public function insert($table, $zPK) {
+    public function insert($table, $zPK)
+    {
 
         $this->setPrimaryKey('');
 
@@ -587,7 +606,8 @@ class Musqlidb extends mysqli
      * @param string $extraArgument
      * @return boolean
      */
-    public function update($table, $variables = [], $primaryKey, $extraArgument) {
+    public function update($table, $variables = [], $primaryKey, $extraArgument)
+    {
 
         $sql = "UPDATE $table SET ";
 
@@ -622,7 +642,7 @@ class Musqlidb extends mysqli
 
             return !$this->isError();
         } else {
-            $this->errorLog('update CANCELLED - Missing update fields');
+            $this->errorLog('update CANCELLED - Missing update fields ( ' . $this->dbName . '::' . $table . ' )');
             return false;
         }
     }
@@ -635,7 +655,8 @@ class Musqlidb extends mysqli
      * @param string $extraArgument
      * @return boolean
      */
-    public function insertUpdate($table, $variables = [], $extraArgument) {
+    public function insertUpdate($table, $variables = [], $extraArgument)
+    {
 
         $primaryKey = $this->insert($table);
         return $this->update($table, $variables, $primaryKey, $extraArgument);
@@ -648,10 +669,11 @@ class Musqlidb extends mysqli
      * @param array $unsetSysFields // i.e. created time and user
      * @return boolean
      */
-    public function updateOnInsert($table, $variables = [], $unsetSysFields = []) {
+    public function updateOnInsert($table, $variables = [], $unsetSysFields = [])
+    {
 
-        if(count($variables) == 0) {
-            $this->errorLog('updateOnInsert CANCELLED - Missing variables');
+        if (count($variables) == 0) {
+            $this->errorLog('updateOnInsert CANCELLED - Missing variables ( ' . $this->dbName . '::' . $table . ' )');
             return false;
         }
 
@@ -679,8 +701,8 @@ class Musqlidb extends mysqli
         $sql .= $fields;
         $sql .= ' ON DUPLICATE KEY UPDATE ';
 
-        if(is_array($unsetSysFields)) {
-            foreach($unsetSysFields as $sf) {
+        if (is_array($unsetSysFields)) {
+            foreach ($unsetSysFields as $sf) {
                 unset($variables["$sf"]);
             }
         }
@@ -703,8 +725,8 @@ class Musqlidb extends mysqli
 
         $sql .= $fields;
 
-        $this->run($sql, 'insert');
-        if(!$this->isError()) {
+        $this->run($sql);
+        if (!$this->isError()) {
             $this->setPrimaryKey($this->getLastInsertID());
         }
 
@@ -720,10 +742,11 @@ class Musqlidb extends mysqli
      * @param array $variables
      * @return boolean
      */
-    public function create($table, $variables = []) {
+    public function create($table, $variables = [])
+    {
 
-        if(count($variables) == 0) {
-            $this->errorLog('create CANCELLED - Missing variables');
+        if (count($variables) == 0) {
+            $this->errorLog('create CANCELLED - Missing variables ( ' . $this->dbName . '::' . $table . ' )');
             return false;
         }
 
@@ -752,14 +775,14 @@ class Musqlidb extends mysqli
 
             $sql .= $fields;
 
-            $this->run($sql, 'insert');
-            if(!$this->isError()) {
+            $this->run($sql);
+            if (!$this->isError()) {
                 $this->setPrimaryKey($this->getLastInsertID());
             }
 
             return !$this->isError();
         } else {
-            $this->errorLog('create CANCELLED - Missing fields');
+            $this->errorLog('create CANCELLED - Missing fields ( ' . $this->dbName . '::' . $table . ' )');
             return false;
         }
     }
@@ -772,7 +795,8 @@ class Musqlidb extends mysqli
      * @param string $where
      * @return bool
      */
-    public function delete($table, $key = [], $where = '') {
+    public function delete($table, $key = [], $where = '')
+    {
 
         $where = $where == '' ? "z_PRIMARY_KEY" : $where;
 
@@ -800,7 +824,8 @@ class Musqlidb extends mysqli
      * @param string $query
      * @return string
      */
-    public function addCondition($query) {
+    public function addCondition($query)
+    {
         return strstr($query, "WHERE") ? " AND " : " WHERE ";
     }
 
@@ -810,7 +835,8 @@ class Musqlidb extends mysqli
      * @param string $mainSql
      * @return string
      */
-    public function buildCountSQL($mainSql = '') {
+    public function buildCountSQL($mainSql = '')
+    {
 
         if ($mainSql == '')
             return $mainSql;
@@ -835,7 +861,8 @@ class Musqlidb extends mysqli
      * @param string $query
      * @return array
      */
-    public function getQueryPart($query) {
+    public function getQueryPart($query)
+    {
 
         $sql = '';
         $rest = '';
@@ -845,8 +872,7 @@ class Musqlidb extends mysqli
         if (strstr($query, "HAVING")) {
             $expl = @explode("HAVING", $query);
             $query = $expl[0];
-            $having = " HAVING " . $expl[1];
-            ;
+            $having = " HAVING " . $expl[1];;
         }
 
         if (strstr($query, "ORDER BY")) {
@@ -873,19 +899,47 @@ class Musqlidb extends mysqli
     }
 
     /**
+     * resolveBindingPair
+     *
+     * @param int $key
+     * @param string $val
+     * @return string
+     */
+    protected function resolveBindingPair($key, $val)
+    {
+
+        if (strlen($val) == 0) {
+            $bind = "`$key` = NULL";
+        } else {
+
+            if (strstr($val, '[dbFunction]')) {
+                $val = str_replace('[dbFunction]', '', $val);
+                $bind = "`$key` = $val";
+            } else {
+                $val = $this->escape($val);
+                $bind = "`$key` = '$val'";
+            }
+        }
+
+        return $bind;
+    }
+
+
+    /**
      * createPrimaryKey - create primary key
      *
      * @param string $table
      * @return int
      */
-    protected function createPrimaryKey($table) {
+    protected function createPrimaryKey($table)
+    {
 
         $firstNumber = 1;
         $keyOK = 'no';
 
         while ($keyOK != 'yes') {
 
-            mt_srand((double) microtime() * 1000000);
+            mt_srand((double)microtime() * 1000000);
             $random1 = mt_rand(1000, 9999);
             $random1 = sprintf("%04s", $random1);
 
@@ -909,8 +963,9 @@ class Musqlidb extends mysqli
     /**
      * trackDeleteAction
      */
-    protected function trackDeleteAction() {
-        Log::info($this->runSQL.'; '.$this->errno.'; '.$this->error);
+    protected function trackDeleteAction()
+    {
+        Log::info($this->dbName . ' :: ' . $this->runSQL . '; ' . $this->errno . '; ' . $this->error);
     }
 
     /**
@@ -919,7 +974,8 @@ class Musqlidb extends mysqli
      * @param boolean $testStatus
      * @return object
      */
-    public static function sql_Run($databaseConfig, $query, $testStatus = false) {
+    public static function sql_Run($databaseConfig, $query, $testStatus = false)
+    {
 
         $db = self::getInstanceByConfig($databaseConfig);
         $db->testStatus = $testStatus;
@@ -937,7 +993,8 @@ class Musqlidb extends mysqli
      * @param boolean $testStatus
      * @return object
      */
-    public static function sql_Insert($databaseConfig, $table, $zPK, $testStatus = false) {
+    public static function sql_Insert($databaseConfig, $table, $zPK, $testStatus = false)
+    {
 
         $db = self::getInstanceByConfig($databaseConfig);
         $db->testStatus = $testStatus;
@@ -957,7 +1014,8 @@ class Musqlidb extends mysqli
      * @param boolean $testStatus
      * @return object
      */
-    public static function sql_Update($databaseConfig, $table, $variables = [], $primaryKey, $extraArgument, $testStatus = false) {
+    public static function sql_Update($databaseConfig, $table, $variables = [], $primaryKey, $extraArgument, $testStatus = false)
+    {
 
         $db = self::getInstanceByConfig($databaseConfig);
         $db->testStatus = $testStatus;
@@ -976,7 +1034,8 @@ class Musqlidb extends mysqli
      * @param boolean $testStatus
      * @return object
      */
-    public static function sql_InsertUpdate($databaseConfig, $table, $variables = [], $extraArgument, $testStatus = false) {
+    public static function sql_InsertUpdate($databaseConfig, $table, $variables = [], $extraArgument, $testStatus = false)
+    {
 
         $db = self::getInstanceByConfig($databaseConfig);
         $db->testStatus = $testStatus;
@@ -995,7 +1054,8 @@ class Musqlidb extends mysqli
      * @param boolean $testStatus
      * @return object
      */
-    public static function sql_Create($databaseConfig, $table, $variables = [], $testStatus = false) {
+    public static function sql_Create($databaseConfig, $table, $variables = [], $testStatus = false)
+    {
 
         $db = self::getInstanceByConfig($databaseConfig);
         $db->testStatus = $testStatus;
@@ -1009,12 +1069,13 @@ class Musqlidb extends mysqli
      *
      * @param string $databaseConfig - database config option
      * @param string $table
-     * @param array/key $key
+     * @param array /key $key
      * @param string $where
      * @param boolean $testStatus
      * @return object
      */
-    public static function sql_Delete($databaseConfig, $table, $key = [], $where = '', $testStatus = false) {
+    public static function sql_Delete($databaseConfig, $table, $key = [], $where = '', $testStatus = false)
+    {
 
         $db = self::getInstanceByConfig($databaseConfig);
         $db->testStatus = $testStatus;
