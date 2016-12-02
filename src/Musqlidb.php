@@ -1,6 +1,6 @@
 <?php
 
-namespace Psgdev\Musqlidb;
+namespace Musqlidb;
 
 use mysqli;
 use Exception;
@@ -110,12 +110,7 @@ class Musqlidb extends mysqli
         } catch (Exception $E) {
             $this->close();
             $this->errorLog("Set database issue: " . $E->getMessage());
-            throw $E;
-        } finally {
-            if($this->isError()) {
-                $this->close();
-                die();
-            }
+            die($E->getMessage());
         }
 
     }
