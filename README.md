@@ -2,4 +2,4 @@ This library is not tend to be used outside application and environment where it
 
 optional line in app.php, section aliases
 
-'Musqlidb' => Psgdev\Musqlidb\Musqlidb::class,
+'Musqlidb' => Musqlidb\Musqlidb::class,
