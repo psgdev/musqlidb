@@ -1,6 +1,6 @@
 <?php
 
-namespace Musqlidb;
+namespace PsgdevMusqlidb;
 
 use mysqli;
 use Exception;
@@ -53,7 +53,6 @@ class Musqlidb extends mysqli
      *
      * @throws Exception exception
      * @param array $connectionArray
-     * return object
      */
     public function __construct($connectionArray = [])
     {
@@ -201,7 +200,7 @@ class Musqlidb extends mysqli
      * isValidKey
      *
      * @param int $key
-     * @return int
+     * @return bool
      */
     public function isValidKey($key)
     {
@@ -217,7 +216,7 @@ class Musqlidb extends mysqli
      *
      * @throws Exception exception
      * @param string $databaseConfig
-     * @return object
+     * @return Musqlidb
      */
     public static function getInstanceByConfig($databaseConfig)
     {
@@ -249,7 +248,7 @@ class Musqlidb extends mysqli
      * getInstance - return instance or create new instance with array of connection properties
      *
      * @param array $connectionArray
-     * @return object
+     * @return Musqlidb
      */
     public static function getInstance($connectionArray = [])
     {
@@ -271,7 +270,7 @@ class Musqlidb extends mysqli
      * @throws Exception exception
      * @param string $query
      * @param bool $reconnected
-     * @return object|bool
+     * @return \mysqli_result|bool
      */
     public function run($query, $reconnected = false)
     {
@@ -599,7 +598,7 @@ class Musqlidb extends mysqli
      * @param array $variables
      * @param int $primaryKey
      * @param string $extraArgument
-     * @return boolean
+     * @return bool
      */
     public function update($table, $variables = [], $primaryKey, $extraArgument)
     {
@@ -648,7 +647,7 @@ class Musqlidb extends mysqli
      * @param string $table
      * @param array $variables
      * @param string $extraArgument
-     * @return boolean
+     * @return bool
      */
     public function insertUpdate($table, $variables = [], $extraArgument)
     {
@@ -735,7 +734,7 @@ class Musqlidb extends mysqli
      *
      * @param string $table
      * @param array $variables
-     * @return boolean
+     * @return bool
      */
     public function create($table, $variables = [])
     {
@@ -967,7 +966,7 @@ class Musqlidb extends mysqli
      * @param string $databaseConfig - database config option
      * @param string $query
      * @param boolean $testStatus
-     * @return object
+     * @return Musqlidb
      */
     public static function sql_Run($databaseConfig, $query, $testStatus = false)
     {
@@ -986,7 +985,7 @@ class Musqlidb extends mysqli
      * @param string $table
      * @param int $zPK
      * @param boolean $testStatus
-     * @return object
+     * @return Musqlidb
      */
     public static function sql_Insert($databaseConfig, $table, $zPK, $testStatus = false)
     {
@@ -1007,7 +1006,7 @@ class Musqlidb extends mysqli
      * @param int $primaryKey
      * @param string $extraArgument
      * @param boolean $testStatus
-     * @return object
+     * @return Musqlidb
      */
     public static function sql_Update($databaseConfig, $table, $variables = [], $primaryKey, $extraArgument, $testStatus = false)
     {
@@ -1027,7 +1026,7 @@ class Musqlidb extends mysqli
      * @param array $variables
      * @param string $extraArgument
      * @param boolean $testStatus
-     * @return object
+     * @return Musqlidb
      */
     public static function sql_InsertUpdate($databaseConfig, $table, $variables = [], $extraArgument, $testStatus = false)
     {
@@ -1047,7 +1046,7 @@ class Musqlidb extends mysqli
      * @param string $table
      * @param array $variables
      * @param boolean $testStatus
-     * @return object
+     * @return Musqlidb
      */
     public static function sql_Create($databaseConfig, $table, $variables = [], $testStatus = false)
     {
@@ -1067,7 +1066,7 @@ class Musqlidb extends mysqli
      * @param array /key $key
      * @param string $where
      * @param boolean $testStatus
-     * @return object
+     * @return Musqlidb
      */
     public static function sql_Delete($databaseConfig, $table, $key = [], $where = '', $testStatus = false)
     {
