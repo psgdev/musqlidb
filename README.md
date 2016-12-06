@@ -14,7 +14,9 @@ add to application's composer.json the require lines and repositories
     }
 ],
 
+app.php
+add line to providers section
+PsgdevMusqlidb\MusqlidbServiceProvider::class
 
-optional line in app.php, section aliases
-
-'Musqlidb' => Musqlidb\Musqlidb::class,
+add line to aliases section
+'Musqlidb' => PsgdevMusqlidb\Facades\Musqlidb::class,
