@@ -13,18 +13,19 @@ class MusqlidbServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-         echo 'pera service';
+        //
     }
 
     /**
      * Register the application services.
      *
-     * @return void
+     * @return Musqlidb
      */
     public function register()
     {
-        $this->app['pera'] = $this->app->share(function($app) {
-            return new Pera();
-        });
+//         $this->app->bind('musqlidb', function() {
+//             return new Musqlidb;
+//         });
+        $this->app->bind('musqlidb', 'PsgdevMusqlidb\Musqlidb');
     }
 }
