@@ -9,6 +9,10 @@ use Log;
 /**
  * Class Musqlidb
  * Connect to one or more mysql database and run crud
+ *
+ * @author Tibor (tibor@planetsg.com)
+ * @version 1
+ * @since Nov, 22 2016.
  * @package Psgdev\Musqlidb
  */
 class Musqlidb extends mysqli
@@ -33,7 +37,7 @@ class Musqlidb extends mysqli
     /**
      * public var
      */
-    public $trackDeleted = false; // track destructive actions
+    public $trackDeleted = true; // track destructive actions
     public $testStatus = false; // if true, queries will not be executed except select statement!!!!
     public $cntConnection = 0;
     public $response = null;
@@ -70,17 +74,16 @@ class Musqlidb extends mysqli
             if ($this->connect_errno > 0) {
                 sleep(1);
                 $this->cntConnection++;
-                $err = "Unable to connect to " . $this->dbName . " on " . $this->dbHost . " : '" . $_SERVER['SERVER_NAME'] . "', msg: " . $this->connect_error;
+                $err = "Tried to connect to " . $this->dbName . " on " . $this->dbHost . ", msg: " . $this->connect_error;
                 $this->errorLog($err);
                 self::__construct($connectionArray);
             } else {
-                Log::info("Connected to " . $this->dbName . " on " . $this->dbHost);
                 $this->cntConnection = 0;
             }
 
 
             if ($this->cntConnection > 4) {
-                $err = "Unable to connect to " . $this->dbName . " on " . $this->dbHost . " : '" . $_SERVER['SERVER_NAME'] . "', msg: " . $this->connect_error;
+                $err = "Unable to connect to " . $this->dbName . " on " . $this->dbHost . ", msg: " . $this->connect_error;
                 //$this->errorLog($err);
                 throw new Exception($err);
                 die();
@@ -164,7 +167,7 @@ class Musqlidb extends mysqli
     /**
      * useTrackDeleted - use log delete action
      *
-     * @param bool $use
+     * @param boolean $use
      */
     public function useTrackDeleted($use = true)
     {
@@ -200,7 +203,7 @@ class Musqlidb extends mysqli
      * isValidKey
      *
      * @param int $key
-     * @return bool
+     * @return boolean
      */
     public function isValidKey($key)
     {
@@ -227,7 +230,7 @@ class Musqlidb extends mysqli
         }
 
 
-        if (self::$currentDatabaseConnection != $databaseConfig || !self::$instance || (self::$instance && self::$instance->setUtf8mb4 == true)) {
+        if (self::$currentDatabaseConnection != $databaseConfig || !self::$instance || (self::$instance && self::$instance->setUtf8mb4Uni == true)) {
 
             self::$currentDatabaseConnection = $databaseConfig;
 
@@ -255,7 +258,7 @@ class Musqlidb extends mysqli
 
         if (!is_array($connectionArray) || count($connectionArray) == 0) die('Missing database connection properties.');
 
-        if (self::$currentDatabaseName != $connectionArray['database'] || !self::$instance || (self::$instance && self::$instance->setUtf8mb4 == true)) {
+        if (self::$currentDatabaseName != $connectionArray['database'] || !self::$instance || (self::$instance && self::$instance->setUtf8mb4Uni == true)) {
 
             self::$currentDatabaseName = $connectionArray['database'];
             self::$instance = new self($connectionArray);
@@ -269,8 +272,8 @@ class Musqlidb extends mysqli
      *
      * @throws Exception exception
      * @param string $query
-     * @param bool $reconnected
-     * @return \mysqli_result|bool
+     * @param boolean $reconnected
+     * @return \mysqli_result|boolean
      */
     public function run($query, $reconnected = false)
     {
@@ -285,7 +288,7 @@ class Musqlidb extends mysqli
         }
 
         $this->runSQL = $query;
-        $this->currentQuery = " | db: " . $this->dbName . "; query: " . $this->runSQL . " |";
+        $this->currentQuery = " | db: " . $this->dbName . ", query: " . $this->runSQL;
 
         $subQuery = trim(strtolower(substr(trim($this->runSQL), 0, 8)));
 
@@ -330,7 +333,7 @@ class Musqlidb extends mysqli
         }
 
 
-        $this->currentQuery .= "error: " . $this->errno . "::" . $this->error . "; affRows: " . $this->affected_rows . " | ";
+        $this->currentQuery .= ", error: " . $this->errno . "::" . $this->error . ", affRows: " . $this->affected_rows . ", enc: " . $this->getEnc . " | ";
 
         // ** RECONNECT AND RUN THE QUERY - THESE ERRORS OCCURS WHEN THE APPLICATION AND DATABASE ARE ON DIFFERENT SERVERS - TIMEOUT ISSUE !!!
         if ($this->errno == '2006' || $this->errno == '2013') {
@@ -388,9 +391,9 @@ class Musqlidb extends mysqli
     /**
      * result
      *
-     * @param bool $onlyAssociative
-     * @param bool $returnObject
-     * @return array|object
+     * @param boolean $onlyAssociative
+     * @param boolean $returnObject
+     * @return array|stdClass
      */
     public function result($onlyAssociative = false, $returnObject = false)
     {
@@ -422,9 +425,9 @@ class Musqlidb extends mysqli
     /**
      * fill
      *
-     * @param bool $onlyAssociative
-     * @param bool $returnArrayOfObject
-     * @return array|object
+     * @param boolean $onlyAssociative
+     * @param boolean $returnArrayOfObject
+     * @return array|stdClass
      */
     public function fill($onlyAssociative = false, $returnArrayOfObject = false)
     {
@@ -451,7 +454,7 @@ class Musqlidb extends mysqli
      * getLastInsertID
      *
      * @throws Exception exception
-     * @param bool $silent
+     * @param boolean $silent
      * @return int
      */
     public function getLastInsertID($silent = false)
@@ -482,7 +485,7 @@ class Musqlidb extends mysqli
     /**
      * isError
      *
-     * @return bool
+     * @return boolean
      */
     public function isError()
     {
@@ -492,7 +495,7 @@ class Musqlidb extends mysqli
     /**
      * getError
      *
-     * @param bool $format
+     * @param boolean $format
      * @return string
      */
     public function getError($format = false)
@@ -519,7 +522,7 @@ class Musqlidb extends mysqli
      * @param array $data
      * @return array
      */
-    public function getKeyArray($field = 'z_PRIMARY_KEY', $data = [])
+    public function getKeyArray($field = 'z_PRIMARY_KEY', $data)
     {
         $ret = [];
 
@@ -548,7 +551,7 @@ class Musqlidb extends mysqli
      *
      * @param string txt
      */
-    public function errorLog($txt = '')
+    public function errorLog($txt)
     {
 
         if ($txt != '') {
@@ -571,7 +574,7 @@ class Musqlidb extends mysqli
 
         $this->setPrimaryKey('');
 
-        if ($zPK != '') {
+        if (is_numeric($zPK)) {
 
             $this->setPrimaryKey(intval($zPK));
 
@@ -598,7 +601,7 @@ class Musqlidb extends mysqli
      * @param array $variables
      * @param int $primaryKey
      * @param string $extraArgument
-     * @return bool
+     * @return boolean
      */
     public function update($table, $variables = [], $primaryKey, $extraArgument)
     {
@@ -647,7 +650,7 @@ class Musqlidb extends mysqli
      * @param string $table
      * @param array $variables
      * @param string $extraArgument
-     * @return bool
+     * @return boolean
      */
     public function insertUpdate($table, $variables = [], $extraArgument)
     {
@@ -734,7 +737,7 @@ class Musqlidb extends mysqli
      *
      * @param string $table
      * @param array $variables
-     * @return bool
+     * @return boolean
      */
     public function create($table, $variables = [])
     {
@@ -787,9 +790,9 @@ class Musqlidb extends mysqli
      * @param string $table
      * @param array $key
      * @param string $where
-     * @return bool
+     * @return boolean
      */
-    public function delete($table, $key = [], $where = '')
+    public function delete($table, $key = [], $where)
     {
 
         $where = $where == '' ? "z_PRIMARY_KEY" : $where;
@@ -829,7 +832,7 @@ class Musqlidb extends mysqli
      * @param string $mainSql
      * @return string
      */
-    public function buildCountSQL($mainSql = '')
+    public function buildCountSQL($mainSql)
     {
 
         if ($mainSql == '')
@@ -1068,7 +1071,7 @@ class Musqlidb extends mysqli
      * @param boolean $testStatus
      * @return Musqlidb
      */
-    public static function sql_Delete($databaseConfig, $table, $key = [], $where = '', $testStatus = false)
+    public static function sql_Delete($databaseConfig, $table, $key = [], $where, $testStatus = false)
     {
 
         $db = self::getInstanceByConfig($databaseConfig);
