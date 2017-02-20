@@ -58,7 +58,7 @@ class Musqlidb extends mysqli
      * @throws Exception exception
      * @param array $connectionArray
      */
-    public function __construct($connectionArray = [])
+    public function __construct($connectionArray = ['host' => '', 'port' => '', 'database' => '', 'username' => '', 'password' => ''])
     {
 
         if (is_array($connectionArray)) {

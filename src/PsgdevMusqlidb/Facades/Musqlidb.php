@@ -8,6 +8,8 @@
 
 namespace PsgdevMusqlidb\Facades;
 
+use Illuminate\Support\Facades\Facade;
+
 /**
  * @see \Illuminate\Config\Repository
  */
