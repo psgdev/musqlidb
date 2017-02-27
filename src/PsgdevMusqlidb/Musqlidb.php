@@ -522,7 +522,7 @@ class Musqlidb extends mysqli
      * @param array $data
      * @return array
      */
-    public function getKeyArray($field = 'z_PRIMARY_KEY', $data)
+    public function getKeyArray($field = 'z_PRIMARY_KEY', $data = [])
     {
         $ret = [];
 
@@ -569,7 +569,7 @@ class Musqlidb extends mysqli
      * @param int $zPK
      * @return int
      */
-    public function insert($table, $zPK)
+    public function insert($table, $zPK = '')
     {
 
         $this->setPrimaryKey('');
@@ -603,7 +603,7 @@ class Musqlidb extends mysqli
      * @param string $extraArgument
      * @return boolean
      */
-    public function update($table, $variables = [], $primaryKey, $extraArgument)
+    public function update($table, $variables = [], $primaryKey = '', $extraArgument = '')
     {
 
         $sql = "UPDATE $table SET ";
@@ -652,7 +652,7 @@ class Musqlidb extends mysqli
      * @param string $extraArgument
      * @return boolean
      */
-    public function insertUpdate($table, $variables = [], $extraArgument)
+    public function insertUpdate($table, $variables = [], $extraArgument = '')
     {
 
         $primaryKey = $this->insert($table);
@@ -792,7 +792,7 @@ class Musqlidb extends mysqli
      * @param string $where
      * @return boolean
      */
-    public function delete($table, $key = [], $where)
+    public function delete($table, $key = [], $where = '')
     {
 
         $where = $where == '' ? "z_PRIMARY_KEY" : $where;
@@ -902,10 +902,10 @@ class Musqlidb extends mysqli
      * @param string $val
      * @return string
      */
-    protected function resolveBindingPair($key, $val)
+    protected function resolveBindingPair($key, $val = '')
     {
 
-        if (strlen($val) == 0) {
+        if (empty($val)) {
             $bind = "`$key` = NULL";
         } else {
 
@@ -971,7 +971,7 @@ class Musqlidb extends mysqli
      * @param boolean $testStatus
      * @return Musqlidb
      */
-    public static function sql_Run($databaseConfig, $query, $testStatus = false)
+    public static function sql_Run($databaseConfig, $query = '', $testStatus = false)
     {
 
         $db = self::getInstanceByConfig($databaseConfig);
@@ -990,7 +990,7 @@ class Musqlidb extends mysqli
      * @param boolean $testStatus
      * @return Musqlidb
      */
-    public static function sql_Insert($databaseConfig, $table, $zPK, $testStatus = false)
+    public static function sql_Insert($databaseConfig, $table = '', $zPK = '', $testStatus = false)
     {
 
         $db = self::getInstanceByConfig($databaseConfig);
@@ -1011,7 +1011,7 @@ class Musqlidb extends mysqli
      * @param boolean $testStatus
      * @return Musqlidb
      */
-    public static function sql_Update($databaseConfig, $table, $variables = [], $primaryKey, $extraArgument, $testStatus = false)
+    public static function sql_Update($databaseConfig, $table = '', $variables = [], $primaryKey = '', $extraArgument = '', $testStatus = false)
     {
 
         $db = self::getInstanceByConfig($databaseConfig);
@@ -1031,7 +1031,7 @@ class Musqlidb extends mysqli
      * @param boolean $testStatus
      * @return Musqlidb
      */
-    public static function sql_InsertUpdate($databaseConfig, $table, $variables = [], $extraArgument, $testStatus = false)
+    public static function sql_InsertUpdate($databaseConfig, $table = '', $variables = [], $extraArgument = '', $testStatus = false)
     {
 
         $db = self::getInstanceByConfig($databaseConfig);
@@ -1051,7 +1051,7 @@ class Musqlidb extends mysqli
      * @param boolean $testStatus
      * @return Musqlidb
      */
-    public static function sql_Create($databaseConfig, $table, $variables = [], $testStatus = false)
+    public static function sql_Create($databaseConfig, $table = '', $variables = [], $testStatus = false)
     {
 
         $db = self::getInstanceByConfig($databaseConfig);
@@ -1071,7 +1071,7 @@ class Musqlidb extends mysqli
      * @param boolean $testStatus
      * @return Musqlidb
      */
-    public static function sql_Delete($databaseConfig, $table, $key = [], $where, $testStatus = false)
+    public static function sql_Delete($databaseConfig, $table = '', $key = [], $where = '', $testStatus = false)
     {
 
         $db = self::getInstanceByConfig($databaseConfig);
