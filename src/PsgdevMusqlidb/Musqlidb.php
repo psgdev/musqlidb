@@ -130,7 +130,7 @@ class Musqlidb extends mysqli
         try {
             $this->set_charset('utf8');
             $this->run("SET collation_connection = 'utf8_unicode_ci'");
-            $this->run("SET NAMES 'utf8' COLLATE 'utf8_unicode_ci'");
+            //$this->run("SET NAMES 'utf8' COLLATE 'utf8_unicode_ci'"); not recommended
         } catch (Exception $E) {
             $this->errorLog("Set connection encoding issue: " . $E->getMessage());
             throw $E;
@@ -153,7 +153,7 @@ class Musqlidb extends mysqli
         try {
             $this->set_charset('utf8mb4');
             $this->run("SET collation_connection = 'utf8mb4_unicode_ci'");
-            $this->run("SET NAMES 'utf8mb4' COLLATE 'utf8mb4_unicode_ci'");
+            //$this->run("SET NAMES 'utf8mb4' COLLATE 'utf8mb4_unicode_ci'"); not recommended
         } catch (Exception $E) {
             $this->errorLog("Set connection encoding issue: " . $E->getMessage());
             throw $E;
