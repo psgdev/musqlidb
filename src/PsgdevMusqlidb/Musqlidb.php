@@ -504,7 +504,7 @@ class Musqlidb extends mysqli
             $ret = "Database: " . $this->dbName . "\n Error ID: " . $this->errno . "\n Error message:" . $this->error . "\n SQL: " . $this->runSQL . "\n Encoding: " . $this->getEnc;
             return $ret;
         }
-        return "Database: " . $this->dbName . "Error ID: " . $this->errno . " :: " . $this->error . " :: " . $this->runSQL . " :: " . $this->getEnc;
+        return "Database: " . $this->dbName . ", Error ID: " . $this->errno . " :: " . $this->error . " :: " . $this->runSQL . " :: " . $this->getEnc;
     }
 
     /**
