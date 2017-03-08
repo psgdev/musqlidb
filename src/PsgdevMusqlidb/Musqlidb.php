@@ -33,6 +33,8 @@ class Musqlidb extends mysqli
     protected $dbName;
     protected $dbUser;
     protected $dbPassword;
+    protected $dbCharset;
+    protected $dbCollation;
 
     /**
      * public var
@@ -58,7 +60,7 @@ class Musqlidb extends mysqli
      * @throws Exception exception
      * @param array $connectionArray
      */
-    public function __construct($connectionArray = ['host' => '', 'port' => '', 'database' => '', 'username' => '', 'password' => ''])
+    public function __construct($connectionArray = ['host' => '', 'port' => '', 'database' => '', 'username' => '', 'password' => '', 'charset' => 'utf8', 'collation' => 'utf8_unicode_ci'])
     {
 
         if (is_array($connectionArray)) {
@@ -90,6 +92,24 @@ class Musqlidb extends mysqli
             }
 
 
+            if (!empty($connectionArray['charset'])) {
+                $this->dbCharset = strtolower($connectionArray['charset']);
+
+                if ($this->dbCharset == 'utf8') {
+                    $this->setConnectionUTF8Uni();
+                }
+
+                if ($this->dbCharset == 'utf8mb4') {
+                    $this->setConnectionUTF8mb4Uni();
+                }
+            }
+
+            if (!empty($connectionArray['collation'])) {
+                $this->dbCollation = strtolower($connectionArray['collation']);
+                // collation will be ignored for connection setup, follow the setConnectionUTF8Uni, setConnectionUTF8mb4Uni
+            }
+
+
         } else {
             //$this->errorLog('Missing connection array in constructor.');
             throw new Exception('Missing connection array in constructor.');
@@ -98,6 +118,7 @@ class Musqlidb extends mysqli
 
 
     }
+
 
     /**
      * selectDB - if needed after connection has been created
@@ -135,7 +156,7 @@ class Musqlidb extends mysqli
             $this->errorLog("Set connection encoding issue: " . $E->getMessage());
             throw $E;
         } finally {
-            if($this->isError()) {
+            if ($this->isError()) {
                 die();
             }
         }
@@ -158,7 +179,7 @@ class Musqlidb extends mysqli
             $this->errorLog("Set connection encoding issue: " . $E->getMessage());
             throw $E;
         } finally {
-            if($this->isError()) {
+            if ($this->isError()) {
                 die();
             }
         }
