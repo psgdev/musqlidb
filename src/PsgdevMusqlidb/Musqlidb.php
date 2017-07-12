@@ -123,7 +123,7 @@ class Musqlidb extends mysqli
     /**
      * selectDB - if needed after connection has been created
      *
-     * @throws Exception \mysqli_sql_exception
+     * @throws Exception \mysqli_sql_exception  
      * @param $database
      */
     public function selectDB($database)
