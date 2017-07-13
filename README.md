@@ -13,10 +13,3 @@ add to application's composer.json the require lines and repositories
         "url":  "https://github.com/psgdev/musqlidb.git"
     }
 ],
-
-app.php
-add line to providers section
-PsgdevMusqlidb\MusqlidbServiceProvider::class
-
-add line to aliases section
-'Musqlidb' => PsgdevMusqlidb\Facades\Musqlidb::class,
