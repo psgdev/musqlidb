@@ -123,7 +123,7 @@ class Musqlidb extends mysqli
     /**
      * selectDB - if needed after connection has been created
      *
-     * @throws Exception \mysqli_sql_exception  
+     * @throws Exception \mysqli_sql_exception
      * @param $database
      */
     public function selectDB($database)
@@ -631,6 +631,9 @@ class Musqlidb extends mysqli
 
         $fields = '';
 
+        //unset($variables[null]);
+        //unset($variables[""]);
+
         $a = 0;
         $cnt = count($variables);
         foreach ($variables as $key => $val) {
@@ -700,6 +703,9 @@ class Musqlidb extends mysqli
         $sql = "INSERT INTO $table SET ";
 
         $fields = '';
+
+        //unset($variables[null]);
+        //unset($variables[""]);
 
         $a = 0;
         $cnt = count($variables);
@@ -773,6 +779,9 @@ class Musqlidb extends mysqli
         $sql = "INSERT INTO $table SET ";
 
         $fields = '';
+
+        //unset($variables[null]);
+        //unset($variables[""]);
 
         $a = 0;
         $cnt = count($variables);
@@ -1016,7 +1025,7 @@ class Musqlidb extends mysqli
 
         $db = self::getInstanceByConfig($databaseConfig);
         $db->testStatus = $testStatus;
-        $db->Insert($table, $zPK);
+        $db->insert($table, $zPK);
 
         return $db;
     }
@@ -1037,7 +1046,7 @@ class Musqlidb extends mysqli
 
         $db = self::getInstanceByConfig($databaseConfig);
         $db->testStatus = $testStatus;
-        $db->Update($table, $variables, $primaryKey, $extraArgument);
+        $db->update($table, $variables, $primaryKey, $extraArgument);
 
         return $db;
     }
@@ -1057,7 +1066,7 @@ class Musqlidb extends mysqli
 
         $db = self::getInstanceByConfig($databaseConfig);
         $db->testStatus = $testStatus;
-        $db->InsertUpdate($table, $variables, $extraArgument);
+        $db->insertUpdate($table, $variables, $extraArgument);
 
         return $db;
     }
