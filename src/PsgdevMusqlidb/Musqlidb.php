@@ -935,7 +935,7 @@ class Musqlidb extends mysqli
     protected function resolveBindingPair($key, $val = '')
     {
 
-        if (empty($val)) {
+        if (strlen($val) == 0) {
             $bind = "`$key` = NULL";
         } else {
 
