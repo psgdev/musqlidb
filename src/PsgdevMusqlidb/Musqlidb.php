@@ -367,11 +367,19 @@ class Musqlidb extends mysqli
         }
 
 
-        $this->real_query($this->runSQL);
+        try {
+
+            $this->real_query($this->runSQL);
+
+        }  catch (Exception $E) {
+            throw new Exception("Database Exception: " . $E->getMessage());
+            //die();
+        }
+
 
         if ($this->errno > 0) {
-            //$this->errorLog();
             throw new Exception("Database SQL error: " . $this->getError());
+            //die();
         }
 
         try {
