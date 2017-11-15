@@ -288,6 +288,34 @@ class Musqlidb extends mysqli
         return self::$instance;
     }
 
+
+    /**
+     * getInstance - return instance or create new instance for default Laravel mysql database config
+     *
+     * @throws Exception exception
+     * @return Musqlidb
+     */
+    public static function getDefaultInstance()
+    {
+
+        if (self::$currentDatabaseConnection != 'default-mysql' || !self::$instance || (self::$instance && self::$instance->setUtf8mb4Uni == true)) {
+
+            self::$currentDatabaseConnection = 'default-mysql';
+
+            $connectionArray = config("database.connections.mysql");
+
+            if (!is_array($connectionArray)) {
+                throw new Exception('Missing database connection properties.');
+                die();
+            }
+
+            self::$instance = new self($connectionArray);
+        }
+        self::$instance->setPrimaryKey('');
+        return self::$instance;
+    }
+
+
     /**
      * run
      *
@@ -590,7 +618,7 @@ class Musqlidb extends mysqli
      * @param int $zPK
      * @return int
      */
-    public function insert($table, $zPK = '')
+    public function insert($table, $zPK = null)
     {
 
         $this->setPrimaryKey('');
@@ -624,7 +652,7 @@ class Musqlidb extends mysqli
      * @param string $extraArgument
      * @return boolean
      */
-    public function update($table, $variables = [], $primaryKey = '', $extraArgument = '')
+    public function update($table, $variables = [], $primaryKey = null, $extraArgument = '')
     {
 
         $sql = "UPDATE $table SET ";
@@ -1020,7 +1048,7 @@ class Musqlidb extends mysqli
      * @param boolean $testStatus
      * @return Musqlidb
      */
-    public static function sql_Insert($databaseConfig, $table = '', $zPK = '', $testStatus = false)
+    public static function sql_Insert($databaseConfig, $table = '', $zPK = null, $testStatus = false)
     {
 
         $db = self::getInstanceByConfig($databaseConfig);
@@ -1041,7 +1069,7 @@ class Musqlidb extends mysqli
      * @param boolean $testStatus
      * @return Musqlidb
      */
-    public static function sql_Update($databaseConfig, $table = '', $variables = [], $primaryKey = '', $extraArgument = '', $testStatus = false)
+    public static function sql_Update($databaseConfig, $table = '', $variables = [], $primaryKey = null, $extraArgument = '', $testStatus = false)
     {
 
         $db = self::getInstanceByConfig($databaseConfig);
@@ -1096,7 +1124,7 @@ class Musqlidb extends mysqli
      *
      * @param string $databaseConfig - database config option
      * @param string $table
-     * @param array /key $key
+     * @param array $key
      * @param string $where
      * @param boolean $testStatus
      * @return Musqlidb
