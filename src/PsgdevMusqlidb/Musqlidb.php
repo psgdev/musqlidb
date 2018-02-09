@@ -39,7 +39,7 @@ class Musqlidb extends mysqli
     /**
      * public var
      */
-    public $trackDeleted = true; // track destructive actions
+    public $trackDeleted = false; // track destructive actions
     public $testStatus = false; // if true, queries will not be executed except select statement!!!!
     public $cntConnection = 0;
     public $response = null;
