@@ -53,6 +53,7 @@ class Musqlidb extends mysqli
     protected static $instance = null;
     protected static $currentDatabaseConnection = '_currentDbConnection'; // current database connection from general database config, if new database requested, must switch in static instance call
     protected static $currentDatabaseName = '_currentDbName'; // current database name, if new database requested, must switch in static instance call
+    protected static $lastConnectionArray = []; // last acquired connection properties
 
     /**
      * Musqlidb constructor
@@ -63,6 +64,8 @@ class Musqlidb extends mysqli
     {
 
         if (is_array($connectionArray)) {
+
+            self::$lastConnectionArray = $connectionArray;
 
             $this->dbHost = $connectionArray['host'];
             $this->dbPort = is_numeric($connectionArray['port']) ? $connectionArray['port'] : 3306;
@@ -121,7 +124,6 @@ class Musqlidb extends mysqli
     /**
      * selectDB - if needed after connection has been created
      *
-     * @throws \mysqli_sql_exception
      * @param $database
      */
     public function selectDB($database)
@@ -399,7 +401,7 @@ class Musqlidb extends mysqli
         if ($this->errno == '2006' || $this->errno == '2013') {
             $this->errorLog($this->dbName . ' :: ' . $this->runSQL);
             $this->close();
-            if (self::__construct()) {
+            if (self::__construct(self::$lastConnectionArray)) {
                 $this->run($this->runSQL, true);
             }
         }
@@ -895,7 +897,7 @@ class Musqlidb extends mysqli
 
             $toDel = @implode(",", $key);
             $toDel = $this->escape($toDel);
-            $sql = "DELETE FROM $table WHERE $where IN($toDel)";
+            $sql = "DELETE FROM $table WHERE `$where` IN($toDel)";
             try {
                 $this->run($sql);
             } catch(Exception $E) {
@@ -905,7 +907,7 @@ class Musqlidb extends mysqli
 
             if (@!is_array($key) && $key != '') {
                 $key = $this->escape($key);
-                $sql = "DELETE FROM $table WHERE $where = '$key'";
+                $sql = "DELETE FROM $table WHERE `$where` = '$key'";
                 try {
                     $this->run($sql);
                 } catch(Exception $E) {
@@ -1047,7 +1049,7 @@ class Musqlidb extends mysqli
 
             $value = $firstNumber . $random1 . $random2;
 
-            $sql = "SELECT z_PRIMARY_KEY FROM $table WHERE z_PRIMARY_KEY = '$value'";
+            $sql = "SELECT z_PRIMARY_KEY FROM $table WHERE `z_PRIMARY_KEY` = '$value'";
 
             try {
                 $this->real_query($sql);
